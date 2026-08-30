@@ -1,0 +1,287 @@
+:root {
+  --bg: #000;
+  --fg: #fff;
+  --scale: 1;
+  --card-w: calc(150px * var(--scale));
+  --card-h: calc(190px * var(--scale));
+  --gap: 14px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 时钟整体：横屏横排、竖屏竖排（仿 Fliqlo） */
+.clock {
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--gap) * 0.55);
+  padding: 2vh 2vw;
+}
+
+@media (orientation: portrait) {
+  .clock { flex-direction: column; gap: calc(var(--gap) * 0.45); }
+}
+
+.unit { display: flex; gap: calc(var(--gap) * 0.4); }
+
+.colon {
+  font-size: calc(var(--card-h) * 0.55);
+  font-weight: 800;
+  line-height: 1;
+  opacity: .92;
+  transform: translateY(-4%);
+}
+
+.sec-colon { display: none; }
+.sec-unit { display: none; }
+body.show-seconds .sec-colon { display: block; }
+body.show-seconds .sec-unit { display: flex; }
+
+/* 翻页卡片：静态外壳 + 旋转翻页层 */
+.digit {
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: calc(var(--card-w) * 0.07);
+  /* "钟内壁"：深灰而非纯黑，旋转层身后始终有它垫着，不会露黑 */
+  background: #141416;
+}
+
+.card {
+  position: absolute;
+  inset: 0;
+  perspective: 600px;
+  border-radius: inherit;
+  background: #141416;
+}
+
+/* 静态半片：显示当前值，不参与旋转 */
+.card .top, .card .bottom {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+}
+
+.card .top {
+  top: 0;
+  /* Fliqlo 质感：顶半微亮、外圆角 */
+  background: #1c1c1e;
+  border-radius: calc(var(--card-w) * 0.07) calc(var(--card-w) * 0.07) 0 0;
+}
+
+.card .bottom {
+  bottom: 0;
+  /* 底半微暗，模拟真实翻牌的受光差 */
+  background: #101013;
+  border-radius: 0 0 calc(var(--card-w) * 0.07) calc(var(--card-w) * 0.07);
+}
+
+/* 数字：顶部显示字的下半、底部显示字的上半，拼成完整数字（静态与旋转层共用） */
+.card .top .num, .card .bottom .num,
+.card .fold-top .num, .card .fold-bottom .num {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--card-h) * 0.62);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.card .top .num, .card .fold-top .num { top: 0; }
+.card .bottom .num, .card .fold-bottom .num { bottom: 0; }
+
+/* 拼接细缝：2px 深色缝 + 极软投影 */
+.card .top::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: #000;
+  pointer-events: none;
+}
+
+.card .bottom::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -2px;
+  height: 4px;
+  background: linear-gradient(180deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 100%);
+  pointer-events: none;
+}
+
+/* 旋转翻页层：直角、不裁圆角（避免 iPad Safari 对圆角 3D 元素渲染出黑边），翻页时才显示 */
+.card .fold-top, .card .fold-bottom {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  border-radius: 0;
+  display: none;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.card .fold-top { top: 0; transform-origin: 50% 100%; background: #1c1c1e; }
+.card .fold-bottom { bottom: 0; transform-origin: 50% 0%; background: #101013; }
+
+/* 翻页动画：上挡板带旧值翻下、下挡板带新值翻上 */
+@keyframes flipTop { 0% { transform: rotateX(0); } 100% { transform: rotateX(-90deg); } }
+@keyframes flipBottom { 0% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+
+.card.flipping .fold-top { display: block; animation: flipTop .25s ease-in forwards; }
+.card.flipping .fold-bottom { display: block; animation: flipBottom .25s ease-out .25s forwards; }
+
+/* 截图演示用慢速翻页 */
+body.slow .card.flipping .fold-top { animation-duration: 1.5s; }
+body.slow .card.flipping .fold-bottom { animation-duration: 1.5s; animation-delay: 1.5s; }
+
+/* 系统开启「减弱动态效果」时不做翻页动画，直接换字 */
+@media (prefers-reduced-motion: reduce) {
+  .card.flipping .fold-top, .card.flipping .fold-bottom { animation: none; }
+}
+
+/* 隐藏挡板：去掉折痕与动画，变成平面数字 */
+body.no-flaps .card .top::after, body.no-flaps .card .bottom::before { display: none; }
+body.no-flaps .card .top, body.no-flaps .card .bottom { background: #0a0a0a; }
+body.no-flaps .card .fold-top, body.no-flaps .card .fold-bottom { display: none !important; }
+
+/* 变暗遮罩 */
+.dim-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* 齿轮按钮 */
+.gear {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.85);
+  border: 1px solid rgba(255,255,255,.30);
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 20;
+}
+
+/* 设置面板 */
+.settings {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.55);
+}
+
+/* 修复：hidden 属性必须真正隐藏面板（display:flex 会覆盖默认隐藏） */
+.settings[hidden] { display: none; }
+
+.settings-inner {
+  width: min(420px, 88vw);
+  padding: 22px 24px;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-title { font-size: 18px; font-weight: 700; }
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+}
+
+.row input[type=range] { flex: 1; accent-color: #fff; }
+
+.val { width: 46px; text-align: right; color: #aaa; font-variant-numeric: tabular-nums; }
+
+.toggle {
+  width: 58px;
+  padding: 6px 0;
+  border-radius: 999px;
+  border: 1px solid #3a3a3a;
+  background: #1c1c1c;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.toggle.on { background: #fff; color: #000; border-color: #fff; }
+
+.close-btn {
+  padding: 10px 0;
+  border-radius: 10px;
+  border: none;
+  background: #fff;
+  color: #000;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 提示气泡（防息屏失败等，独立于设置面板，确保可见） */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  max-width: 86vw;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(42, 42, 42, .94);
+  color: #f5c542;
+  font-size: 14px;
+  z-index: 40;
+  text-align: center;
+}
+
+.toast[hidden] { display: none; }
+
+/* 键盘焦点可见性（无障碍底线） */
+.gear:focus-visible,
+.toggle:focus-visible,
+.close-btn:focus-visible,
+.row input[type=range]:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>翻页时钟</title>
+<meta name="description" content="免费 iPad 翻页时钟，仿 Fliqlo">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="翻页时钟">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="clock" id="clock"></div>
+  <div class="dim-overlay" id="dimOverlay"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <button class="gear" id="gearBtn" type="button" aria-label="设置">⚙</button>
+
+  <div class="settings" id="settingsPanel" hidden>
+    <div class="settings-inner">
+      <div class="settings-title">设置</div>
+
+      <label class="row">
+        <span>12 小时制</span>
+        <button class="toggle" id="hour12Btn" type="button" aria-pressed="true">开</button>
+      </label>
+
+      <label class="row">
+        <span>显示秒（点屏幕也可切换）</span>
+        <button class="toggle" id="secBtn" type="button" aria-pressed="false">关</button>
+      </label>
+
+      <label class="row">
+        <span>亮度</span>
+        <input type="range" id="dimRange" min="20" max="100" value="100">
+        <span class="val" id="dimVal">100%</span>
+      </label>
+
+      <label class="row">
+        <span>翻页挡板</span>
+        <button class="toggle" id="flapsBtn" type="button" aria-pressed="true">开</button>
+      </label>
+
+      <label class="row">
+        <span>显示尺寸</span>
+        <input type="range" id="scaleRange" min="50" max="150" value="100">
+        <span class="val" id="scaleVal">100%</span>
+      </label>
+
+      <button class="close-btn" id="closeSettings" type="button">完成</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
